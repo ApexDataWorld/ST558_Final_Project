@@ -13,14 +13,58 @@ Quarto enables you to weave together content and executable code into a finished
 When you click the **Render** button a document will be generated that includes both content and the output of embedded code. You can embed code like this:
 
 ```{r}
-1 + 1
+library(tidyverse)
+library(ggplot2)
+library(tidymodels)
+library(rpart.plot)
 ```
 
 You can add options to executable code like this
 
 ```{r}
-#| echo: false
-2 * 2
+health_data <- read_csv("data/diabetes_binary_health_indicators_BRFSS2015.csv")
+head(health_data)
 ```
 
-The `echo: false` option disables the printing of code (only output is displayed).
+```{r}
+health_data <- health_data |>
+  mutate(HighBP = factor(HighBP, levels = c(0,1), labels = c("No", "Yes")),
+         HighChol = factor(HighChol, levels = c(0,1), labels = c("No", "Yes")),
+         CholCheck = factor(CholCheck, levels = c(0,1), labels = c("No", "Yes")),
+         Smoker = factor(Smoker, levels = c(0,1), labels = c("No", "Yes")),
+         Stroke = factor(Stroke, levels = c(0,1), labels = c("No", "Yes")),
+         HeartDiseaseorAttack = factor(HeartDiseaseorAttack, levels = c(0,1), labels = c("No","Yes")),
+         PhysActivity = factor(PhysActivity, levels = c(0,1), labels = c("No", "Yes")),
+         Fruits = factor(Fruits, levels = c(0,1), labels = c("No", "Yes")),
+         Veggies = factor(Veggies, levels = c(0,1), labels = c("No", "Yes")),
+         HvyAlcoholConsump = factor(HvyAlcoholConsump, levels = c(0, 1), labels = c("No", "Yes")),
+         AnyHealthcare = factor(AnyHealthcare, levels = c(0,1), labels = c("No", "Yes")),
+         NoDocbcCost = factor(NoDocbcCost, levels = c(0,1), labels = c("No", "Yes")),
+         GenHlth = factor(GenHlth, levels = c(1:5), labels = c("Excellent", "Very Good", "Good", "Fair", "Poor")),
+         DiffWalk = factor(DiffWalk, levels = c(0,1), labels = c("No", "Yes")),
+         Sex = factor(Sex, levels = c(0,1), labels = c("Female", "Male")),
+         Age = factor(Age, levels = c(1:13), labels = c("18-24", "25-29", "30-34", "35-39", "40-44", "45-49", "50-54", "55-59", "60-64", "65-69", "70-74", "75-79", "80+")),
+         Education = factor(Education, levels = c(1:6), labels = c("KG or No School", "Elementary", "Middle school", "High school", "College","Professional Degree")),
+         Income = factor(Income, levels = c(1:8), labels = c("<10K", "$10k-$15k", "$15k-$20k", "$20k-$25k", "$25k-$35k", "$35k-$50k", "$50k-$75k", "$75k+"))
+         )
+
+health_data
+```
+
+```{r}
+set.seed(37)
+health_data <- health_data |> mutate(Diabetes_binary = factor(Diabetes_binary))
+diabetes_split <- initial_split(health_data, prop = 0.7, strata = Diabetes_binary)
+diabetes_train <- training(diabetes_split)
+diabetes_test <- testing(diabetes_split)
+
+diabetes_CV_folds <- vfold_cv(diabetes_train, 5)
+```
+
+```{r}
+diabetes_CV_folds
+```
+
+```{r}
+
+```
