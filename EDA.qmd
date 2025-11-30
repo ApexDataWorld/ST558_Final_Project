@@ -74,30 +74,117 @@ lapply(factor_col, levels)
 ```
 
 ```{r}
+# freq_table <- sapply(health_data, function(x) if(is.factor(x)) table(x) else NULL)
+# freq_table 
+
+factor_cont_table <- lapply(factor_col, table)
+factor_cont_table
+```
+
+```{r}
+unique(health_data$Diabetes_binary)
+```
+
+```{r}
+ggplot(health_data, aes(x = Diabetes_binary)) +
+geom_bar() +
+labs(title = "Overall Diabetes Status",
+x = "Diabetes Status",
+y = "Count")
+```
+
+```{r}
+ggplot(health_data, aes(x= Diabetes_binary, fill = Sex)) +
+  geom_bar(position = "dodge") +
+  labs(title = "Proportion with Diabetes by Sex",
+x = "Sex",
+y = "Proportion")
+```
+
+```{r}
+cont_table <- table(health_data$Diabetes_binary, health_data$Sex)
+
+cont_table
+```
+
+```{r}
+diab_count <- health_data |>
+  group_by(Diabetes_binary) |>
+  summarize(count = n())
+
+diab_count
+```
+
+```{r}
+ggplot(health_data, aes(x = Diabetes_binary, fill = Sex)) +
+  geom_bar(position = "dodge") +
+  geom_text(
+    stat = "count", 
+    aes(label = ..count..), 
+    position = position_dodge(width = 0.9), 
+    vjust = -0.5
+  ) +
+  labs(
+    title = "Diabetes Status by Gender",
+    x = "Diabetes Status (0 = No Diabetes, 1 = Diabetes)",
+    y = "Count"
+  ) +
+  scale_fill_manual(values = c("Female" = "pink", "Male" = "blue")) +
+  theme_minimal()
 
 ```
 
 ```{r}
+summary(health_data$BMI)
+```
+
+```{r}
+ggplot(health_data, aes(x = BMI)) +
+geom_histogram(binwidth = 2) +
+labs(title = "BMI Distribution",
+x = "BMI",
+y = "Frequency")
+```
+
+```{r}
+ggplot(health_data, aes(x = "", y = BMI)) +
+  geom_boxplot(fill = "orange") +
+  labs(title = "BMI Distribution", x = "", y= "BMI")
 
 ```
 
 ```{r}
+ggplot(health_data, aes(x = GenHlth, fill = factor(Diabetes_binary))) +
+  geom_bar(position = "dodge") +
+  labs(title = "General Health vs. Diabetes Status", x = "General Health", y = "Count") +
+  scale_fill_manual(values = c("0" = "lightgreen", "1" = "red"), name = "Diabetes Status") +
+  theme_minimal()
+```
+
+```{r}
+# Summarize the counts for Diabetes_binary by Sex
+diab_count <- health_data %>%
+  group_by(Sex) %>%
+  summarize(count = n())
+
+# Plot using the aggregated data
+ggplot(diab_count, aes(x = Sex, y = count, fill = Sex)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  labs(
+    title = "Count of Diabetes Cases by Sex",
+    x = "Sex",
+    y = "Count"
+  ) +
+  theme_minimal()
 
 ```
 
 ```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
+# do some correlation on the numerical data 
+health_data |>
+  select(where(is.numeric)) |>
+  cor() |>
+  round(3)
 
 ```
 
