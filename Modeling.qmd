@@ -258,3 +258,161 @@ rf_final_metrics
 ```
 
 ### 
+
+-   Decision Tree Test set performance
+
+```{r}
+# Get predicted probabilities
+tree_final_predictions <- final_tree |>
+   predict(diabetes_test, type = "prob") |>
+   bind_cols(diabetes_test |> select(Diabetes_binary))
+
+# Convert predicted probabilities to class labels (threshold at 0.5)
+ tree_final_predictions <- tree_final_predictions |>
+   mutate(.pred_class = ifelse(.pred_1 > 0.5, "1", "0"))
+
+# Convert the class labels into factors for accuracy calculation
+ tree_final_predictions <- tree_final_predictions |>
+   mutate(.pred_class = factor(.pred_class, levels = c("0", "1")))
+
+# Now calculate metrics
+ tree_final_metrics <- yardstick::metrics(
+   tree_final_predictions,   truth = Diabetes_binary,
+   estimate = .pred_class
+
+)
+
+# View metrics
+tree_final_metrics
+```
+
+```{r}
+# # Evaluation of Decision Tree
+# tree_pred <- predict(final_tree, diabetes_test, type = "prob") |>
+#   bind_cols(diabetes_test %>% select(Diabetes_binary))
+# 
+#tree_log_loss <- mn_log_loss(tree_pred, truth = Diabetes_binary, .pred_1)
+# 
+# # Evaluation of Random Forest
+# rf_pred <- predict(rf_final_fit, diabetes_test, type = "prob") |>
+#   bind_cols(diabetes_test %>% select(Diabetes_binary))
+# 
+# # Log loss for Random Forest
+# rf_log_loss <- mn_log_loss(rf_pred, truth = Diabetes_binary, .pred_1)
+# 
+
+```
+
+```{r}
+
+# Calculate Log-Loss for Decision Tree
+tree_log_loss <- mn_log_loss(tree_pred, truth = Diabetes_binary, .pred_1)
+
+# Extract the finalized workflow from last_fit() 
+rf_workflow_extracted <- extract_workflow(rf_final_fit)
+
+# Predict probabilities on the test set
+rf_pred <- predict(rf_workflow_extracted, diabetes_test, type = "prob") |>
+  bind_cols(diabetes_test %>% select(Diabetes_binary))
+
+# Calculate Log-Loss for the Random Forest Model
+rf_log_loss <- mn_log_loss(rf_pred, truth = Diabetes_binary, .pred_1)
+
+# Convert predicted probabilities to class labels for accuracy evaluation
+rf_pred <- rf_pred |>
+  mutate(.pred_class = ifelse(.pred_1 > 0.5, "1", "0")) |>
+  mutate(.pred_class = factor(.pred_class, levels = c("0", "1")))
+
+# Evaluate metrics (accuracy, etc.)
+rf_metrics <- rf_pred |>
+  yardstick::metrics(truth = Diabetes_binary, estimate = .pred_class)
+
+# Print metrics
+print(rf_metrics)
+
+
+```
+
+```{r}
+# Compare models}
+# model_comparison <- tibble(
+#   Model = c("Decision Tree", "Random Forest"),
+#   Log_Loss = c(tree_log_loss, rf_log_loss)
+# )
+# 
+# print(model_comparison)
+
+print(tree_log_loss)
+print(rf_log_loss)
+```
+
+-   Random Forest Test Set performance
+
+```{r}
+rf_final_metrics <- rf_final_fit |>
+  collect_metrics()
+
+rf_final_metrics
+```
+
+### Compare Performance
+
+```{r}
+# Combine Metrics into a DataFrame for Comparison
+model_comparison <- tibble(
+  Model = c("Decision Tree", "Random Forest"),
+  Accuracy = c(tree_final_metrics |> filter(.metric == "accuracy") |> pull(.estimate),
+               rf_final_metrics |> filter(.metric == "accuracy") |> pull(.estimate)),
+  Log_Loss = c(tree_final_metrics |> filter(.metric =="mn_log_loss") |> pull(.estimate),
+               rf_final_metrics |> filter(.metric =="mn_log_loss") |> pull(.estimate))
+)
+
+print(model_comparison)
+
+```
+
+```{r}
+# Declare winner based on log-loss
+# Calculate log-loss
+tree_log_loss <- mn_log_loss(tree_pred, truth = Diabetes_binary, .pred_1) %>% pull(.estimate)
+rf_log_loss <- mn_log_loss(rf_pred, truth = Diabetes_binary, .pred_1) %>% pull(.estimate)
+print(tree_log_loss)
+print(rf_log_loss)
+# Declare winner
+if (tree_log_loss < rf_log_loss) {
+  winner <- "Decision Tree"
+} else {
+  winner <- "Random Forest"
+}
+
+# Print the winner
+cat("The best model is:", winner)
+
+```
+
+Plot the variable importance
+
+```{r}
+# bag_final_model <- extract_fit_engine(rf_final_fit)
+# bag_final_model$imp |>
+#   mutate(term = factor(term, levels = term)) |> 
+#   ggplot(aes(x = term, y = value)) + geom_bar(stat ="identity") +
+#   coord_flip()
+```
+
+### Save the file for api
+
+```{r}
+# # save the training data set
+# saveRDS(diabetes_train, file = "data/diabetes_train.rds")
+# 
+# # save the random forest tree model
+# saveRDS(rf_final_fit, file = "data/final_rf_model.rds")
+# 
+# #save the comparison metrics
+# saveRDS(model_comparison, file = "data/model_comparison.rds")
+```
+
+```{r}
+
+```
