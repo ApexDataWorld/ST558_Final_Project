@@ -4,13 +4,9 @@ format: html
 editor: visual
 ---
 
-## Quarto
+Reading Data
 
-Quarto enables you to weave together content and executable code into a finished document. To learn more about Quarto see <https://quarto.org>.
-
-## Running Code
-
-When you click the **Render** button a document will be generated that includes both content and the output of embedded code. You can embed code like this:
+Import the libraries
 
 ```{r}
 library(tidyverse)
@@ -51,6 +47,10 @@ health_data <- health_data |>
 health_data
 ```
 
+Make a model for diabetes data. Split the data into 70(training) and 30(testing) percent.
+
+On the training set, create a 5 fold CV split
+
 ```{r}
 set.seed(37)
 health_data <- health_data |> mutate(Diabetes_binary = factor(Diabetes_binary))
@@ -65,6 +65,196 @@ diabetes_CV_folds <- vfold_cv(diabetes_train, 5)
 diabetes_CV_folds
 ```
 
+### Fitting Logistic Regression Models
+
+First of all i have to set up our recipes for the data, standardizing the BMI numeric variable
+
+for the 1st recipe:
+
+Model 1: BMI and Smoker
+
+Model 2: BMI, Smoker, HighBP, HearthDiseaserorAttack, PhysActivity, Sex
+
+Model 3: All the predictors
+
 ```{r}
+# LR1_receipe <- recipe(Diabetes_binary ~  BMI + Smoker,
+#                       data = health_data) |>
+#   step_normalize(BMI)
+```
+
+```{r}
+LR2_recipe <- recipe(Diabetes_binary ~ BMI + Smoker + HighBP + HeartDiseaseorAttack + PhysActivity + Sex,
+                     data = health_data) |>
+  step_normalize(all_numeric(), -Diabetes_binary)
+```
+
+```{r}
+# LR3_recipe <- recipe(Diabetes_binary ~ ., data = health_data) |>
+#   step_normalize(all_numeric(), -Diabetes_binary)
 
 ```
+
+```{r}
+LR2_recipe |>
+  prep(diabetes_train) |>
+  bake(diabetes_train) |>
+  colnames()
+```
+
+```{r}
+# LR3_recipe |>
+#   prep(diabetes_train) |>
+#   bake(diabetes_train) |>
+#   colnames()
+```
+
+Classification Tree
+
+Decision Tree
+
+Model Specification
+
+```{r}
+tree_mod <- decision_tree(tree_depth = tune(),
+                          min_n = 20,
+                          cost_complexity = tune()) |>
+  set_engine("rpart") |>
+  set_mode("classification")
+```
+
+Create our Workflow
+
+```{r}
+tree_wkf <- workflow() |>
+  add_recipe(LR2_recipe) |>
+  add_model(tree_mod)
+```
+
+Fit the model with tune_grid() and grid_regular()
+
+```{r}
+tree_grid <- grid_regular(cost_complexity(),
+                          tree_depth(),
+                          levels = c(10,5))
+```
+
+```{r}
+tree_fits <- tree_wkf |>
+  tune_grid(resamples = diabetes_CV_folds,
+            grid = tree_grid,
+            metrics = metric_set(accuracy, mn_log_loss)
+  )
+
+tree_fits
+```
+
+Let see which is the best accuracy
+
+```{r}
+best_tree <- select_best(tree_fits, metric = "mn_log_loss")
+best_tree
+```
+
+Finalize the workflow and fit the model
+
+```{r}
+final_tree <- finalize_workflow(tree_wkf, best_tree) |>
+  fit(data = diabetes_train)
+final_tree
+```
+
+Evaluate the model on the test set \# TRy
+
+```{r}
+tree_pred <- predict(final_tree, diabetes_test, type = "prob") |>
+  bind_cols(diabetes_test |>
+              select(Diabetes_binary))
+tree_pred
+```
+
+log-loss on test data
+
+```{r}
+print(tree_pred)
+tree_log_loss <- mn_log_loss(tree_pred, truth = Diabetes_binary, .pred_1)
+print(tree_log_loss)
+```
+
+# Try
+
+## Fitting Random Forest
+
+```{r}
+rf_spec <- rand_forest(mtry = tune(),
+                       trees = 1000, 
+                       min_n = tune()) |>
+  set_engine("ranger") |>
+  set_mode("classification")
+```
+
+Create our workflow
+
+```{r}
+rf_wkf <- workflow() |>
+  add_recipe(LR2_recipe) |>
+  add_model(rf_spec)
+rf_wkf
+```
+
+fit model with tune_grid() and tune_regular()
+
+```{r}
+rf_fit <- rf_wkf |>
+  tune_grid(resamples = diabetes_CV_folds,
+            grid = 12,
+            metrics = metric_set(accuracy, mn_log_loss))
+```
+
+```{r}
+rf_fit
+```
+
+Collect and view metrics
+
+```{r}
+# rf_fit |>
+#   collect_metrics() |>
+#   filter(.metric == "mn_log_loss") |>
+#   arrange(mean)
+
+#print(rf_metrics)
+```
+
+Let's see which tuning parameters is best
+
+```{r}
+rf_best_params <- select_best(rf_fit, metric = "mn_log_loss")
+rf_best_params
+```
+
+Finalize the workflow with the best parameters
+
+```{r}
+rf_final_wkf <- rf_wkf |>
+  finalize_workflow(rf_best_params)
+```
+
+Fit the finalize model and evaluate on the test set
+
+```{r}
+rf_final_fit <- rf_final_wkf |>
+  last_fit(diabetes_split, metrics = metric_set(accuracy, mn_log_loss))
+rf_final_fit
+```
+
+Collect metrics for the final model
+
+```{r}
+rf_final_metrics <- rf_final_fit |>
+  collect_metrics()
+
+rf_final_metrics
+```
+
+### 
