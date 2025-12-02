@@ -23,28 +23,45 @@ head(health_data)
 ```
 
 ```{r}
+health_data <- read_csv("data/diabetes_binary_health_indicators_BRFSS2015.csv")
+
 health_data <- health_data |>
-  mutate(HighBP = factor(HighBP, levels = c(0,1), labels = c("No", "Yes")),
-         HighChol = factor(HighChol, levels = c(0,1), labels = c("No", "Yes")),
-         CholCheck = factor(CholCheck, levels = c(0,1), labels = c("No", "Yes")),
-         Smoker = factor(Smoker, levels = c(0,1), labels = c("No", "Yes")),
-         Stroke = factor(Stroke, levels = c(0,1), labels = c("No", "Yes")),
-         HeartDiseaseorAttack = factor(HeartDiseaseorAttack, levels = c(0,1), labels = c("No","Yes")),
-         PhysActivity = factor(PhysActivity, levels = c(0,1), labels = c("No", "Yes")),
-         Fruits = factor(Fruits, levels = c(0,1), labels = c("No", "Yes")),
-         Veggies = factor(Veggies, levels = c(0,1), labels = c("No", "Yes")),
-         HvyAlcoholConsump = factor(HvyAlcoholConsump, levels = c(0, 1), labels = c("No", "Yes")),
-         AnyHealthcare = factor(AnyHealthcare, levels = c(0,1), labels = c("No", "Yes")),
-         NoDocbcCost = factor(NoDocbcCost, levels = c(0,1), labels = c("No", "Yes")),
-         GenHlth = factor(GenHlth, levels = c(1:5), labels = c("Excellent", "Very Good", "Good", "Fair", "Poor")),
-         DiffWalk = factor(DiffWalk, levels = c(0,1), labels = c("No", "Yes")),
-         Sex = factor(Sex, levels = c(0,1), labels = c("Female", "Male")),
-         Age = factor(Age, levels = c(1:13), labels = c("18-24", "25-29", "30-34", "35-39", "40-44", "45-49", "50-54", "55-59", "60-64", "65-69", "70-74", "75-79", "80+")),
-         Education = factor(Education, levels = c(1:6), labels = c("KG or No School", "Elementary", "Middle school", "High school", "College","Professional Degree")),
-         Income = factor(Income, levels = c(1:8), labels = c("<10K", "$10k-$15k", "$15k-$20k", "$20k-$25k", "$25k-$35k", "$35k-$50k", "$50k-$75k", "$75k+"))
-         )
+  mutate(
+    Diabetes_binary = factor(Diabetes_binary,
+      levels = c(0, 1),
+      labels = c("NoDiabetes", "Diabetes")),
+    HighBP = factor(HighBP, levels = c(0,1), labels = c("No", "Yes")),
+    HighChol = factor(HighChol, levels = c(0,1), labels = c("No", "Yes")),
+    CholCheck = factor(CholCheck, levels = c(0,1), labels = c("No", "Yes")),
+    Smoker = factor(Smoker, levels = c(0,1), labels = c("No", "Yes")),
+    Stroke = factor(Stroke, levels = c(0,1), labels = c("No", "Yes")),
+    HeartDiseaseorAttack = factor(HeartDiseaseorAttack, levels = c(0,1),
+    labels = c("No","Yes")),
+    PhysActivity = factor(PhysActivity, levels = c(0,1), labels = c("No", "Yes")),
+    Fruits = factor(Fruits, levels = c(0,1), labels = c("No", "Yes")),
+    Veggies = factor(Veggies, levels = c(0,1), labels = c("No", "Yes")),
+    HvyAlcoholConsump = factor(HvyAlcoholConsump, levels = c(0, 1),
+      labels = c("No", "Yes")),
+    AnyHealthcare = factor(AnyHealthcare, levels = c(0,1), labels = c("No", "Yes")),
+    NoDocbcCost = factor(NoDocbcCost, levels = c(0,1), labels = c("No", "Yes")),
+    GenHlth = factor(GenHlth, levels = c(1:5),
+      labels = c("Excellent", "Very Good", "Good", "Fair", "Poor")),
+    DiffWalk = factor(DiffWalk, levels = c(0,1), labels = c("No", "Yes")),
+    Sex = factor(Sex, levels = c(0,1), labels = c("Female", "Male")),
+    Age = factor(Age, levels = c(1:13),
+      labels = c("18-24", "25-29", "30-34", "35-39", "40-44",
+        "45-49", "50-54", "55-59", "60-64",
+        "65-69", "70-74", "75-79", "80+")),
+    Education = factor(Education, levels = c(1:6),
+      labels = c("KG or No School", "Elementary", "Middle school",
+        "High school", "College","Professional Degree")),
+    Income = factor(Income, levels = c(1:8),
+      labels = c("<10K", "$10k-$15k", "$15k-$20k", "$20k-$25k",
+        "$25k-$35k", "$35k-$50k", "$50k-$75k", "$75k+"))
+  )
 
 health_data
+
 ```
 
 Make a model for diabetes data. Split the data into 70(training) and 30(testing) percent.
@@ -53,12 +70,13 @@ On the training set, create a 5 fold CV split
 
 ```{r}
 set.seed(37)
-health_data <- health_data |> mutate(Diabetes_binary = factor(Diabetes_binary))
 diabetes_split <- initial_split(health_data, prop = 0.7, strata = Diabetes_binary)
 diabetes_train <- training(diabetes_split)
-diabetes_test <- testing(diabetes_split)
+diabetes_test  <- testing(diabetes_split)
 
-diabetes_CV_folds <- vfold_cv(diabetes_train, 5)
+diabetes_CV_folds <- vfold_cv(diabetes_train, v = 5)
+diabetes_CV_folds
+
 ```
 
 ```{r}
@@ -84,8 +102,10 @@ Model 3: All the predictors
 ```
 
 ```{r}
-LR2_recipe <- recipe(Diabetes_binary ~ BMI + Smoker + HighBP + HeartDiseaseorAttack + PhysActivity + Sex,
-                     data = health_data) |>
+LR2_recipe <- recipe(
+  Diabetes_binary ~ BMI + Smoker + HighBP + HeartDiseaseorAttack + PhysActivity + Sex,
+    data = health_data
+  ) |>
   step_normalize(all_numeric(), -Diabetes_binary)
 ```
 
@@ -179,6 +199,29 @@ log-loss on test data
 print(tree_pred)
 tree_log_loss <- mn_log_loss(tree_pred, truth = Diabetes_binary, .pred_1)
 print(tree_log_loss)
+```
+
+Convert to class labels with 0.5 threshold and compute accuracy:
+
+```{r}
+tree_final_predictions <- tree_pred |>
+  mutate(
+    .pred_class = if_else(
+    .pred_Diabetes > 0.5,
+    "Diabetes",
+    "NoDiabetes"
+  ),
+  .pred_class = factor(.pred_class, levels = levels(Diabetes_binary))
+)
+
+tree_final_metrics <- yardstick::metrics(
+  tree_final_predictions,
+  truth   = Diabetes_binary,
+  estimate = .pred_class
+)
+
+tree_final_metrics
+
 ```
 
 # Try

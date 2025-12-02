@@ -4,13 +4,17 @@ format: html
 editor: visual
 ---
 
-## Quarto
+## Introduction
 
-Quarto enables you to weave together content and executable code into a finished document. To learn more about Quarto see <https://quarto.org>.
+The Diabetes Health Indicators dataset contains responses from adults in the 2015 BRFSS survey. The outcome of interest is `Diabetes_binary`, which indicates whether the respondent has diabetes (1) or not (0). The dataset also includes clinical risk factors (ex., blood pressure, cholesterol, BMI), lifestyle behaviors (smoking, physical activity, diet), access to care indicators, and demographic variables.
 
-## Running Code
+The goals of this EDA are to:
 
-When you click the **Render** button a document will be generated that includes both content and the output of embedded code. You can embed code like this:
+-   Understand how common diabetes is in this sample.
+
+-   Explore how diabetes status varies across key predictors like BMI, blood pressure, physical activity, and self reported health.
+
+-   Prepare the data (types, factor levels, basic checks) for modeling in the companion Modeling document.
 
 ```{r}
 library(tidyverse)
@@ -23,6 +27,10 @@ You can add options to executable code like this
 ```{r}
 health_data <- read_csv("data/diabetes_binary_health_indicators_BRFSS2015.csv")
 head(health_data)
+```
+
+```{r}
+
 ```
 
 ```{r}
@@ -41,28 +49,45 @@ summary(health_data)
 
 ```{r}
 health_data <- health_data |>
-  mutate(HighBP = factor(HighBP, levels = c(0,1), labels = c("No", "Yes")),
-         HighChol = factor(HighChol, levels = c(0,1), labels = c("No", "Yes")),
-         CholCheck = factor(CholCheck, levels = c(0,1), labels = c("No", "Yes")),
-         Smoker = factor(Smoker, levels = c(0,1), labels = c("No", "Yes")),
-         Stroke = factor(Stroke, levels = c(0,1), labels = c("No", "Yes")),
-         HeartDiseaseorAttack = factor(HeartDiseaseorAttack, levels = c(0,1), labels = c("No","Yes")),
-         PhysActivity = factor(PhysActivity, levels = c(0,1), labels = c("No", "Yes")),
-         Fruits = factor(Fruits, levels = c(0,1), labels = c("No", "Yes")),
-         Veggies = factor(Veggies, levels = c(0,1), labels = c("No", "Yes")),
-         HvyAlcoholConsump = factor(HvyAlcoholConsump, levels = c(0, 1), labels = c("No", "Yes")),
-         AnyHealthcare = factor(AnyHealthcare, levels = c(0,1), labels = c("No", "Yes")),
-         NoDocbcCost = factor(NoDocbcCost, levels = c(0,1), labels = c("No", "Yes")),
-         GenHlth = factor(GenHlth, levels = c(1:5), labels = c("Excellent", "Very Good", "Good", "Fair", "Poor")),
-         DiffWalk = factor(DiffWalk, levels = c(0,1), labels = c("No", "Yes")),
-         Sex = factor(Sex, levels = c(0,1), labels = c("Female", "Male")),
-         Age = factor(Age, levels = c(1:13), labels = c("18-24", "25-29", "30-34", "35-39", "40-44", "45-49", "50-54", "55-59", "60-64", "65-69", "70-74", "75-79", "80+")),
-         Education = factor(Education, levels = c(1:6), labels = c("KG or No School", "Elementary", "Middle school", "High school", "College","Professional Degree")),
-         Income = factor(Income, levels = c(1:8), labels = c("<10K", "$10k-$15k", "$15k-$20k", "$20k-$25k", "$25k-$35k", "$35k-$50k", "$50k-$75k", "$75k+"))
-         )
+  mutate(
+    # Make the response a labeled factor
+    Diabetes_binary = factor(Diabetes_binary,
+                             levels = c(0, 1),
+                             labels = c("NoDiabetes", "Diabetes")),
+    HighBP = factor(HighBP, levels = c(0,1), labels = c("No", "Yes")),
+    HighChol = factor(HighChol, levels = c(0,1), labels = c("No", "Yes")),
+    CholCheck = factor(CholCheck, levels = c(0,1), labels = c("No", "Yes")),
+    Smoker = factor(Smoker, levels = c(0,1), labels = c("No", "Yes")),
+    Stroke = factor(Stroke, levels = c(0,1), labels = c("No", "Yes")),
+    HeartDiseaseorAttack = factor(HeartDiseaseorAttack, levels = c(0,1),
+                                  labels = c("No","Yes")),
+    PhysActivity = factor(PhysActivity, levels = c(0,1), labels = c("No", "Yes")),
+    Fruits = factor(Fruits, levels = c(0,1), labels = c("No", "Yes")),
+    Veggies = factor(Veggies, levels = c(0,1), labels = c("No", "Yes")),
+    HvyAlcoholConsump = factor(HvyAlcoholConsump, levels = c(0, 1),
+                               labels = c("No", "Yes")),
+    AnyHealthcare = factor(AnyHealthcare, levels = c(0,1), labels = c("No", "Yes")),
+    NoDocbcCost = factor(NoDocbcCost, levels = c(0,1), labels = c("No", "Yes")),
+    GenHlth = factor(GenHlth, levels = c(1:5),
+                     labels = c("Excellent", "Very Good", "Good", "Fair", "Poor")),
+    DiffWalk = factor(DiffWalk, levels = c(0,1), labels = c("No", "Yes")),
+    Sex = factor(Sex, levels = c(0,1), labels = c("Female", "Male")),
+    Age = factor(Age, levels = c(1:13),
+                 labels = c("18-24", "25-29", "30-34", "35-39", "40-44",
+                            "45-49", "50-54", "55-59", "60-64",
+                            "65-69", "70-74", "75-79", "80+")),
+    Education = factor(Education, levels = c(1:6),
+                       labels = c("KG or No School", "Elementary", "Middle school",
+                                  "High school", "College","Professional Degree")),
+    Income = factor(Income, levels = c(1:8),
+                    labels = c("<10K", "$10k-$15k", "$15k-$20k", "$20k-$25k",
+                               "$25k-$35k", "$35k-$50k", "$50k-$75k", "$75k+"))
+  )
 
 health_data
 ```
+
+Check factor levels:
 
 ```{r}
 # Check unique values for categorical variables
@@ -73,6 +98,8 @@ factor_col <- health_data |>
 lapply(factor_col, levels)
 ```
 
+Frequency tables for factors:
+
 ```{r}
 # freq_table <- sapply(health_data, function(x) if(is.factor(x)) table(x) else NULL)
 # freq_table 
@@ -81,25 +108,56 @@ factor_cont_table <- lapply(factor_col, table)
 factor_cont_table
 ```
 
+Unique outcome levels:
+
 ```{r}
 unique(health_data$Diabetes_binary)
 ```
 
-```{r}
-ggplot(health_data, aes(x = Diabetes_binary)) +
-geom_bar() +
-labs(title = "Overall Diabetes Status",
-x = "Diabetes Status",
-y = "Count")
-```
+Overall diabetes prevalence
 
 ```{r}
-ggplot(health_data, aes(x= Diabetes_binary, fill = Sex)) +
-  geom_bar(position = "dodge") +
-  labs(title = "Proportion with Diabetes by Sex",
-x = "Sex",
-y = "Proportion")
+ggplot(health_data, aes(x = Diabetes_binary)) +
+  geom_bar() +
+  labs(
+    title = "Overall Diabetes Status",
+    x = "Diabetes Status",
+    y = "Count"
+  )
+
 ```
+
+### Diabetes and sex
+
+Proportions by sex:
+
+```{r}
+ggplot(health_data, aes(x = Sex, fill = Diabetes_binary)) +
+  geom_bar(position = "fill") +
+    labs(
+      title = "Proportion with Diabetes by Sex",
+      x = "Sex",
+      y = "Proportion"
+    ) +
+  scale_y_continuous(labels = scales::percent)
+
+
+```
+
+Counts by sex:
+
+```{r}
+ggplot(health_data, aes(x = Sex, fill = Diabetes_binary)) +
+  geom_bar(position = "dodge") +
+    labs(
+      title = "Diabetes Status by Sex",
+      x = "Sex",
+      y = "Count"
+    )
+
+```
+
+Contingency table:
 
 ```{r}
 cont_table <- table(health_data$Diabetes_binary, health_data$Sex)
@@ -115,24 +173,29 @@ diab_count <- health_data |>
 diab_count
 ```
 
+Bar plot with labels by diabetes status:
+
 ```{r}
 ggplot(health_data, aes(x = Diabetes_binary, fill = Sex)) +
   geom_bar(position = "dodge") +
-  geom_text(
-    stat = "count", 
-    aes(label = ..count..), 
-    position = position_dodge(width = 0.9), 
-    vjust = -0.5
-  ) +
-  labs(
-    title = "Diabetes Status by Gender",
-    x = "Diabetes Status (0 = No Diabetes, 1 = Diabetes)",
-    y = "Count"
-  ) +
+    geom_text(
+      stat = "count",
+      aes(label = ..count..),
+      position = position_dodge(width = 0.9),
+      vjust = -0.5
+    ) +
+    labs(
+      title = "Diabetes Status by Gender",
+      x = "Diabetes Status",
+      y = "Count"
+    ) +
   scale_fill_manual(values = c("Female" = "pink", "Male" = "blue")) +
   theme_minimal()
 
+
 ```
+
+BMI distribution
 
 ```{r}
 summary(health_data$BMI)
@@ -140,44 +203,82 @@ summary(health_data$BMI)
 
 ```{r}
 ggplot(health_data, aes(x = BMI)) +
-geom_histogram(binwidth = 2) +
-labs(title = "BMI Distribution",
-x = "BMI",
-y = "Frequency")
+  geom_histogram(binwidth = 2) +
+    labs(
+      title = "BMI Distribution",
+      x = "BMI",
+      y = "Frequency"
+    )
+
 ```
 
 ```{r}
 ggplot(health_data, aes(x = "", y = BMI)) +
   geom_boxplot(fill = "orange") +
-  labs(title = "BMI Distribution", x = "", y= "BMI")
+    labs(
+      title = "BMI Distribution",
+      x = "",
+      y = "BMI"
+    )
+
 
 ```
+
+General health vs diabetes
 
 ```{r}
-ggplot(health_data, aes(x = GenHlth, fill = factor(Diabetes_binary))) +
+ggplot(health_data, aes(x = GenHlth, fill = Diabetes_binary)) +
   geom_bar(position = "dodge") +
-  labs(title = "General Health vs. Diabetes Status", x = "General Health", y = "Count") +
-  scale_fill_manual(values = c("0" = "lightgreen", "1" = "red"), name = "Diabetes Status") +
+    labs(
+      title = "General Health vs. Diabetes Status",
+        x = "General Health",
+        y = "Count"
+    ) +
+    scale_fill_manual(
+      values = c("NoDiabetes" = "lightgreen", "Diabetes" = "red"),
+        name = "Diabetes Status"
+    ) +
   theme_minimal()
+
 ```
+
+Count of diabetes cases by sex
 
 ```{r}
 # Summarize the counts for Diabetes_binary by Sex
 diab_count <- health_data %>%
-  group_by(Sex) %>%
-  summarize(count = n())
+  filter(Diabetes_binary == "Diabetes") %>%
+    group_by(Sex) %>%
+      summarize(count = n(), .groups = "drop")
 
-# Plot using the aggregated data
+diab_count
+
+
+```
+
+```{r}
+diab_count <- health_data %>%
+  filter(Diabetes_binary == "Diabetes") %>%
+    group_by(Sex) %>%
+      summarize(count = n(), .groups = "drop")
+
+diab_count
+
+```
+
+```{r}
 ggplot(diab_count, aes(x = Sex, y = count, fill = Sex)) +
   geom_bar(stat = "identity", position = "dodge") +
-  labs(
-    title = "Count of Diabetes Cases by Sex",
-    x = "Sex",
-    y = "Count"
-  ) +
+    labs(
+      title = "Count of Diabetes Cases by Sex",
+      x = "Sex",
+      y = "Count"
+    ) +
   theme_minimal()
 
 ```
+
+Correlation among numeric variables
 
 ```{r}
 # do some correlation on the numerical data 
@@ -187,6 +288,10 @@ health_data |>
   round(3)
 
 ```
+
+Link to Modeling Page
+
+[Click here for the Modeling Page](Modeling.html)
 
 ```{r}
 

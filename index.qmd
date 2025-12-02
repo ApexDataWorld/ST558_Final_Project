@@ -4,23 +4,49 @@ format: html
 editor: visual
 ---
 
-## Quarto
+## Welcome
 
-Quarto enables you to weave together content and executable code into a finished document. To learn more about Quarto see <https://quarto.org>.
+This site presents an analysis of the **Diabetes Health Indicators** dataset from the 2015 BRFSS survey.\
+The main outcome of interest is `Diabetes_binary`, which indicates whether a respondent has diabetes or not.
 
-## Running Code
+This project has two main parts:
 
-When you click the **Render** button a document will be generated that includes both content and the output of embedded code. You can embed code like this:
+1.  **Exploratory Data Analysis (EDA)** – understanding the data, distributions, and relationships.\
+2.  **Modeling** – building and comparing predictive models (classification tree and random forest) using the **tidymodels** framework.
 
-```{r}
-1 + 1
-```
+------------------------------------------------------------------------
 
-You can add options to executable code like this
+## Pages
 
-```{r}
-#| echo: false
-2 * 2
-```
+### 1. Exploratory Data Analysis
 
-The `echo: false` option disables the printing of code (only output is displayed).
+The EDA page:
+
+-   Describes the dataset and key variables.
+-   Recodes variables into meaningful factor levels.
+-   Explores diabetes prevalence overall and across groups (example., sex, BMI, general health).
+-   Summarizes numeric variables and examines correlations.
+
+[The EDA Page](EDA.html)
+
+------------------------------------------------------------------------
+
+### 2. Modeling
+
+The Modeling page:
+
+-   Splits the data into training (70%) and test (30%) sets with stratification on `Diabetes_binary`.
+-   Defines a common **recipe** for pre processing predictors.
+-   Fits and tunes:
+    -   A **classification tree**
+    -   A **random forest**
+-   Uses **5 fold cross validation** with **log loss** and **accuracy** to select the best model in each family.
+-   Compares the final models on the test set and selects an overall “winner” for deployment as an API.
+
+[The Modeling Page](Modeling.html)
+
+------------------------------------------------------------------------
+
+## Notes
+
+-   The final selected model from the Modeling page is used in a separate `.R` file to define a **Plumber API**, which is then packaged in a **Docker** image for deployment.
