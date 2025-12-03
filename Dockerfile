@@ -9,7 +9,7 @@ RUN apt-get update -qq && apt-get install -y \
     pandoc \
   && rm -rf /var/lib/apt/lists/*
 
-# install R packages required for your model/API
+# install R packages required for model/API
 RUN R -e "install.packages( \
     c('recipes','parsnip','workflows','dplyr','tibble', \
       'ggplot2','yardstick','readr','ranger'), \

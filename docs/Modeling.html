@@ -166,7 +166,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 ✖ dplyr::lag()      masks stats::lag()
 ✖ yardstick::spec() masks readr::spec()
 ✖ recipes::step()   masks stats::step()
-• Use tidymodels_prefer() to resolve common conflicts.</code></pre>
+• Use suppressPackageStartupMessages() to eliminate package startup messages</code></pre>
 </div>
 <div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(rpart.plot)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stderr">
@@ -546,7 +546,7 @@ and 34 more lines.</code></pre>
 <h2 class="anchored" data-anchor-id="fitting-random-forest">Fitting Random Forest</h2>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb40"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb40-1"><a href="#cb40-1" aria-hidden="true" tabindex="-1"></a>rf_spec <span class="ot">&lt;-</span> <span class="fu">rand_forest</span>(<span class="at">mtry =</span> <span class="fu">tune</span>(),</span>
-<span id="cb40-2"><a href="#cb40-2" aria-hidden="true" tabindex="-1"></a>                       <span class="at">trees =</span> <span class="dv">100</span>, </span>
+<span id="cb40-2"><a href="#cb40-2" aria-hidden="true" tabindex="-1"></a>                       <span class="at">trees =</span> <span class="dv">1000</span>, </span>
 <span id="cb40-3"><a href="#cb40-3" aria-hidden="true" tabindex="-1"></a>                       <span class="at">min_n =</span> <span class="fu">tune</span>()) <span class="sc">|&gt;</span></span>
 <span id="cb40-4"><a href="#cb40-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">set_engine</span>(<span class="st">"ranger"</span>, <span class="at">importance =</span> <span class="st">"impurity"</span>) <span class="sc">|&gt;</span></span>
 <span id="cb40-5"><a href="#cb40-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">set_mode</span>(<span class="st">"classification"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
@@ -572,7 +572,7 @@ Random Forest Model Specification (classification)
 
 Main Arguments:
   mtry = tune()
-  trees = 100
+  trees = 1000
   min_n = tune()
 
 Engine-Specific Arguments:
@@ -581,7 +581,7 @@ Engine-Specific Arguments:
 Computational engine: ranger </code></pre>
 </div>
 </div>
-<p>The random forest model uses the same set of predictors and recipe as the tree but fits many trees and aggregates them. We tune&nbsp;<code>mtry</code>&nbsp;(number of predictors tried at each split) and&nbsp;<code>min_n</code>&nbsp;(minimum node size), with 100 trees and impurity-based variable importance.</p>
+<p>The random forest model uses the same set of predictors and recipe as the tree but fits many trees and aggregates them. We tune&nbsp;<code>mtry</code>&nbsp;(number of predictors tried at each split) and&nbsp;<code>min_n</code>&nbsp;(minimum node size), with 1000 trees and impurity-based variable importance.</p>
 <p>fit model with tune_grid() and tune_regular()</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb43"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb43-1"><a href="#cb43-1" aria-hidden="true" tabindex="-1"></a>rf_fit <span class="ot">&lt;-</span> rf_wkf <span class="sc">|&gt;</span></span>
@@ -600,7 +600,7 @@ Computational engine: ranger </code></pre>
 <pre><code># A tibble: 1 × 3
    mtry min_n .config              
   &lt;int&gt; &lt;int&gt; &lt;chr&gt;                
-1     3    22 Preprocessor1_Model07</code></pre>
+1     3    28 Preprocessor1_Model12</code></pre>
 </div>
 </div>
 <p>Finalize the workflow with the best parameters</p>
@@ -668,8 +668,8 @@ Computational engine: ranger </code></pre>
 <pre><code># A tibble: 2 × 3
   .metric  .estimator .estimate
   &lt;chr&gt;    &lt;chr&gt;          &lt;dbl&gt;
-1 accuracy binary        0.863 
-2 kap      binary        0.0751</code></pre>
+1 accuracy binary        0.862 
+2 kap      binary        0.0718</code></pre>
 </div>
 </div>
 <p>The random forest has accuracy comparable to the decision tree but a noticeably better log-loss and slightly better kappa. This indicates that, while both models correctly classify a similar fraction of cases, the random forest is more informative and distinguishes the two classes more effectively.</p>
@@ -688,7 +688,7 @@ Computational engine: ranger </code></pre>
 </div>
 <div class="sourceCode cell-code" id="cb55"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb55-1"><a href="#cb55-1" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(rf_log_loss)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>[1] 2.190234</code></pre>
+<pre><code>[1] 2.190711</code></pre>
 </div>
 </div>
 <ul>
@@ -703,7 +703,7 @@ Computational engine: ranger </code></pre>
 <pre><code># A tibble: 2 × 4
   .metric     .estimator .estimate .config             
   &lt;chr&gt;       &lt;chr&gt;          &lt;dbl&gt; &lt;chr&gt;               
-1 accuracy    binary         0.863 Preprocessor1_Model1
+1 accuracy    binary         0.862 Preprocessor1_Model1
 2 mn_log_loss binary         0.344 Preprocessor1_Model1</code></pre>
 </div>
 </div>
@@ -718,26 +718,26 @@ Computational engine: ranger </code></pre>
 <pre><code># A tibble: 12 × 8
     mtry min_n .metric     .estimator  mean     n  std_err .config              
    &lt;int&gt; &lt;int&gt; &lt;chr&gt;       &lt;chr&gt;      &lt;dbl&gt; &lt;int&gt;    &lt;dbl&gt; &lt;chr&gt;                
- 1     3    22 mn_log_loss binary     0.345     5 0.00117  Preprocessor1_Model07
- 2     3    28 mn_log_loss binary     0.345     5 0.00120  Preprocessor1_Model12
- 3     4    11 mn_log_loss binary     0.346     5 0.00123  Preprocessor1_Model08
- 4     4    16 mn_log_loss binary     0.346     5 0.00126  Preprocessor1_Model02
- 5     4     2 mn_log_loss binary     0.346     5 0.00125  Preprocessor1_Model09
+ 1     3    28 mn_log_loss binary     0.345     5 0.00119  Preprocessor1_Model12
+ 2     3    22 mn_log_loss binary     0.345     5 0.00118  Preprocessor1_Model07
+ 3     4    16 mn_log_loss binary     0.346     5 0.00126  Preprocessor1_Model02
+ 4     4    11 mn_log_loss binary     0.346     5 0.00125  Preprocessor1_Model08
+ 5     4     2 mn_log_loss binary     0.346     5 0.00126  Preprocessor1_Model09
  6     2    38 mn_log_loss binary     0.346     5 0.00107  Preprocessor1_Model01
- 7     2    14 mn_log_loss binary     0.346     5 0.00101  Preprocessor1_Model03
- 8     2    25 mn_log_loss binary     0.346     5 0.00107  Preprocessor1_Model06
- 9     5    18 mn_log_loss binary     0.347     5 0.00128  Preprocessor1_Model11
-10     6    36 mn_log_loss binary     0.349     5 0.00161  Preprocessor1_Model04
-11     6     8 mn_log_loss binary     0.358     5 0.00248  Preprocessor1_Model05
-12     1    32 mn_log_loss binary     0.359     5 0.000799 Preprocessor1_Model10</code></pre>
+ 7     2    25 mn_log_loss binary     0.346     5 0.00108  Preprocessor1_Model06
+ 8     2    14 mn_log_loss binary     0.346     5 0.00109  Preprocessor1_Model03
+ 9     5    18 mn_log_loss binary     0.347     5 0.00131  Preprocessor1_Model11
+10     6    36 mn_log_loss binary     0.349     5 0.00156  Preprocessor1_Model04
+11     6     8 mn_log_loss binary     0.356     5 0.00253  Preprocessor1_Model05
+12     1    32 mn_log_loss binary     0.358     5 0.000924 Preprocessor1_Model10</code></pre>
 </div>
 <div class="sourceCode cell-code" id="cb61"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb61-1"><a href="#cb61-1" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(rf_metrics)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code># A tibble: 2 × 3
   .metric  .estimator .estimate
   &lt;chr&gt;    &lt;chr&gt;          &lt;dbl&gt;
-1 accuracy binary        0.863 
-2 kap      binary        0.0751</code></pre>
+1 accuracy binary        0.862 
+2 kap      binary        0.0718</code></pre>
 </div>
 </div>
 <section id="compare-performance" class="level3">
@@ -762,7 +762,7 @@ Computational engine: ranger </code></pre>
   Model         Accuracy Log_Loss
   &lt;chr&gt;            &lt;dbl&gt;    &lt;dbl&gt;
 1 Decision Tree    0.862     2.10
-2 Random Forest    0.863     2.19</code></pre>
+2 Random Forest    0.862     2.19</code></pre>
 </div>
 <div class="sourceCode cell-code" id="cb65"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb65-1"><a href="#cb65-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Declare winner based on log-loss</span></span>
 <span id="cb65-2"><a href="#cb65-2" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> (tree_log_loss <span class="sc">&lt;</span> rf_log_loss) {</span>
@@ -813,9 +813,9 @@ Computational engine: ranger </code></pre>
 <span id="cb69-6"><a href="#cb69-6" aria-hidden="true" tabindex="-1"></a>vi </span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>                 BMI               Smoker               HighBP 
-          2724.76403             84.34788           3460.66560 
+          2594.10421             80.76973           3578.05730 
 HeartDiseaseorAttack         PhysActivity                  Sex 
-          1228.70502            329.55067             59.47798 </code></pre>
+          1175.69532            332.77771             56.60797 </code></pre>
 </div>
 <div class="sourceCode cell-code" id="cb71"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb71-1"><a href="#cb71-1" aria-hidden="true" tabindex="-1"></a>vi_df <span class="ot">&lt;-</span> <span class="fu">tibble</span>(</span>
 <span id="cb71-2"><a href="#cb71-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">term  =</span> <span class="fu">names</span>(vi),</span>

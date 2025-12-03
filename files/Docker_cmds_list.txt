@@ -1,0 +1,21 @@
+(base) saurabhgupta@mac ST558_Final_Project % docker build -t diabetes_api .   
+(base) saurabhgupta@mac ST558_Final_Project % docker run -p 8000:8000 diabetes_api    
+(base) saurabhgupta@mac ST558_Final_Project % docker build --platform linux/arm64 -t diabetes_api .
+(base) saurabhgupta@mac ST558_Final_Project % docker run -p 8000:8000 diabetes_api   
+(base) saurabhgupta@mac ST558_Final_Project % docker save diabetes_api -o diabetes_api.tar
+Rows: 253680 Columns: 22
+
+── Column specification ────────────────────────────────────────────────────────
+
+Delimiter: ","
+
+dbl (22): Diabetes_binary, HighBP, HighChol, CholCheck, BMI, Smoker, Stroke,...
+
+
+ℹ Use `spec()` to retrieve the full column specification for this data.
+
+ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.
+
+Running plumber API at http://0.0.0.0:8000⁠
+
+Running swagger Docs at http://127.0.0.1:8000/__docs__/⁠

@@ -79,7 +79,7 @@ rf_recipe <- recipe(
 # Set mtry and min_n to the best values found in Modeling.qmd.
 # Tuned values.
 best_mtry  <- 3   
-best_min_n <- 22 
+best_min_n <- 28
 
 rf_spec_final <- rand_forest(
   mtry  = best_mtry,
@@ -98,7 +98,6 @@ final_rf_model <- fit(rf_wf_final, data = health_data)
 
 
 # Defaults for predictors
-# Helper - most prevalent class for a factor
 get_most_prevalent_class <- function(column) {
   column |>
     na.omit() |>
@@ -117,14 +116,13 @@ default_values <- list(
 )
 
 
-# Precompute predictions for confusion matrix
+# Pre compute predictions for confusion matrix
 
 predictions <- predict(final_rf_model, health_data, type = "class") |>
   bind_cols(health_data |> select(Diabetes_binary))
 
-# ---------------------------
+
 # API Endpoints
-# ---------------------------
 
 #* Prediction endpoint
 #* Takes the predictors used in the final model and returns class + probability.
@@ -171,13 +169,13 @@ pred_endpoint <- function(
   )
 }
 
-# ---- Example calls for /pred (copy/paste into browser or curl) ----
+# ---- Example calls for /pred 
 # http://127.0.0.1:8000/pred
 # http://127.0.0.1:8000/pred?BMI=32&Smoker=Yes&HighBP=Yes&HeartDiseaseorAttack=No&PhysActivity=No&Sex=Male
 # http://127.0.0.1:8000/pred?BMI=24&Smoker=No&HighBP=No&HeartDiseaseorAttack=No&PhysActivity=Yes&Sex=Female
 
 #* Info endpoint
-#* Returns your name and GitHub Pages URL
+#* Returns name and GitHub Pages URL
 #* @get /info
 info_endpoint <- function() {
   list(

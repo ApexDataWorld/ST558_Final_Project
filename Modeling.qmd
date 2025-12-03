@@ -262,7 +262,7 @@ Using a 0.5 threshold, the decision tree reaches roughly 86% accuracy on the tes
 
 ```{r}
 rf_spec <- rand_forest(mtry = tune(),
-                       trees = 100, 
+                       trees = 1000, 
                        min_n = tune()) |>
   set_engine("ranger", importance = "impurity") |>
   set_mode("classification")
@@ -277,7 +277,7 @@ rf_wkf <- workflow() |>
 print(rf_wkf)
 ```
 
-The random forest model uses the same set of predictors and recipe as the tree but fits many trees and aggregates them. We tune `mtry` (number of predictors tried at each split) and `min_n` (minimum node size), with 100 trees and impurity-based variable importance.
+The random forest model uses the same set of predictors and recipe as the tree but fits many trees and aggregates them. We tune `mtry` (number of predictors tried at each split) and `min_n` (minimum node size), with 1000 trees and impurity-based variable importance.
 
 fit model with tune_grid() and tune_regular()
 
