@@ -174,7 +174,8 @@ pred_endpoint <- function(
 info_endpoint <- function() {
   list(
     name = "Saurabh Gupta", 
-    github_pages_url = "https://github.com/ApexDataWorld/ST558_Final_Project/"  
+    #github_pages_url = "https://github.com/ApexDataWorld/ST558_Final_Project/" 
+    github_pages_url = "https://apexdataworld.github.io/ST558_Final_Project/"
   )
 }
 

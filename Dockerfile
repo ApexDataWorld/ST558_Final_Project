@@ -1,6 +1,9 @@
 # Use an image with R and plumber preinstalled
 FROM rstudio/plumber:latest
 
+# install the linux libraries needed for plumber 
+RUN apt-get update -qq && apt-get install -y libssl-dev libcurl4-gnutls-dev libpng-dev pandoc
+
 # Create working directory inside the container
 WORKDIR /app
 
