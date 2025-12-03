@@ -25,6 +25,8 @@ health_data <- read_csv("data/diabetes_binary_health_indicators_BRFSS2015.csv")
 head(health_data)
 ```
 
+The modeling script reads in the same diabetes dataset used in the EDA. The first few rows confirm that the predictors and outcome look the same as before, so the modeling work is directly aligned with our earlier exploration.
+
 ```{r}
 health_data <- read_csv("data/diabetes_binary_health_indicators_BRFSS2015.csv")
 
@@ -63,9 +65,11 @@ health_data <- health_data |>
         "$25k-$35k", "$35k-$50k", "$50k-$75k", "$75k+"))
   )
 
-health_data
+print(health_data)
 
 ```
+
+All the categorical predictors are converted from 0/1 codes into labeled factors again. This ensures that the modeling functions treat them as categorical variables and makes model summaries easier to interpret.
 
 Make a model for diabetes data. Split the data into 70(training) and 30(testing) percent.
 
@@ -78,13 +82,17 @@ diabetes_train <- training(diabetes_split)
 diabetes_test  <- testing(diabetes_split)
 
 diabetes_CV_folds <- vfold_cv(diabetes_train, v = 5)
-diabetes_CV_folds
+#print(diabetes_CV_folds)
 
 ```
+
+The data is split into 70% training and 30% testing, stratified by diabetes status. This keeps the diabetes vs. no-diabetes proportions similar in both sets and gives us a fair way to evaluate out of sample performance later.
 
 ```{r}
 diabetes_CV_folds
 ```
+
+We set up 5 fold cross validation on the training data. This means the training set is reused efficiently: in each fold, part of the data is used to fit the model and the rest to estimate performance. This helps us tune model hyperparameters without touching the test set.
 
 ### Fitting Logistic Regression Models
 
@@ -98,10 +106,7 @@ Model 2: BMI, Smoker, HighBP, HearthDiseaserorAttack, PhysActivity, Sex
 
 Model 3: All the predictors
 
-```{r}
-# LR1_receipe <- recipe(Diabetes_binary ~  BMI + Smoker,
-#                       data = health_data) |>
-#   step_normalize(BMI)
+```         
 ```
 
 ```{r}
@@ -112,9 +117,10 @@ LR2_recipe <- recipe(
   step_normalize(all_numeric(), -Diabetes_binary)
 ```
 
+The recipe focuses on a smaller set of predictors: BMI, Smoker, HighBP, HeartDiseaseorAttack, PhysActivity, and Sex. BMI is standardized, while the categorical variables are kept as factors. These predictors are clinically reasonable risk factors for diabetes and keep the model simpler than using all 21 predictors.
+
 ```{r}
-# LR3_recipe <- recipe(Diabetes_binary ~ ., data = health_data) |>
-#   step_normalize(all_numeric(), -Diabetes_binary)
+
 
 ```
 
@@ -154,6 +160,8 @@ tree_wkf <- workflow() |>
   add_model(tree_mod)
 ```
 
+We set up a classification tree model where tree depth and cost complexity are tunable parameters. The workflow ties together the pre-processing (recipe) and the tree model so they can be tuned and evaluated in one consistent pipeline.
+
 Fit the model with tune_grid() and grid_regular()
 
 ```{r}
@@ -174,22 +182,30 @@ tree_fits <- tree_wkf |>
 tree_fits
 ```
 
+The tuning grid explores different combinations of tree depth and cost complexity. Cross validation finds which combination gives the best balance between accuracy and log loss. This helps avoid an overly shallow (underfit) or overly deep (overfit) tree.
+
 Let see which is the best accuracy
 
 ```{r}
 best_tree <- select_best(tree_fits, metric = "mn_log_loss")
-best_tree
+print(best_tree)
 ```
+
+The best tree has a depth of about 8 and a very small cost complexity value. This suggests the model benefits from allowing a reasonably deep tree, but still with a small penalty to prevent extreme overfitting.
 
 Finalize the workflow and fit the model
 
 ```{r}
 final_tree <- finalize_workflow(tree_wkf, best_tree) |>
   fit(data = diabetes_train)
-final_tree
+print(final_tree)
 ```
 
-Evaluate the model on the test set \# TRy
+The tree splits first on high blood pressure and BMI, and later on variables like heart disease, physical activity, and smoking. This indicates that high blood pressure and higher BMI are key drivers in separating people with and without diabetes in this dataset.
+
+Evaluate the model on the test set
+
+\# TRY
 
 ```{r}
 tree_pred <- predict(final_tree, diabetes_test, type = "prob") |>
@@ -212,6 +228,8 @@ print(tree_log_loss)
 
 ```
 
+The decision tree achieves a log loss of about 2.1 on the test set. This is a relatively high log loss, which means the probability predictions are not very “confident” or well calibrated, especially for the minority (diabetes) class.
+
 Convert to class labels with 0.5 threshold and compute accuracy:
 
 ```{r}
@@ -232,9 +250,11 @@ tree_final_metrics <- yardstick::metrics(
   estimate = .pred_class
 )
 
-tree_final_metrics
+print(tree_final_metrics)
 
 ```
+
+Using a 0.5 threshold, the decision tree reaches roughly 86% accuracy on the test data, but the kappa value is quite low. This tells us that most of the accuracy is coming from correctly predicting the majority class (NoDiabetes), and the model is not doing a great job distinguishing diabetes cases from non-cases.
 
 # Try
 
@@ -254,8 +274,10 @@ Create the workflow
 rf_wkf <- workflow() |>
   add_recipe(LR2_recipe) |>
   add_model(rf_spec)
-rf_wkf
+print(rf_wkf)
 ```
+
+The random forest model uses the same set of predictors and recipe as the tree but fits many trees and aggregates them. We tune `mtry` (number of predictors tried at each split) and `min_n` (minimum node size), with 100 trees and impurity-based variable importance.
 
 fit model with tune_grid() and tune_regular()
 
@@ -266,19 +288,11 @@ rf_fit <- rf_wkf |>
             metrics = metric_set(accuracy, mn_log_loss))
 ```
 
-```{r}
-rf_fit
-```
-
-```{r}
-
-```
-
-Let's see which tuning parameters is best
+Cross-validation suggests that a relatively small `mtry` (around 3) and a moderate `min_n` (e.g., 22) work best. Different tuning combinations give very similar performance, which indicates the random forest is fairly stable and robust to these settings.Let's see which tuning parameters is best
 
 ```{r}
 rf_best_params <- select_best(rf_fit, metric = "mn_log_loss")
-rf_best_params
+print(rf_best_params)
 ```
 
 Finalize the workflow with the best parameters
@@ -293,8 +307,10 @@ Fit the finalize model and evaluate on the test set
 ```{r}
 rf_final_fit <- rf_final_wkf |>
   last_fit(diabetes_split, metrics = metric_set(accuracy, mn_log_loss))
-rf_final_fit
+print(rf_final_fit)
 ```
+
+With the best tuning parameters, the random forest achieves about 86.3% accuracy on the test set, which is similar to the decision tree. However, its log-loss on the test set is much lower (around 0.34), which means its probability predictions are much better calibrated and more reliable.
 
 ```{r}
 
@@ -349,9 +365,11 @@ rf_pred <- rf_pred |>
 rf_metrics <- rf_pred |>
   yardstick::metrics(truth = Diabetes_binary, estimate = .pred_class)
 
-rf_metrics
+print(rf_metrics)
 
 ```
+
+The random forest has accuracy comparable to the decision tree but a noticeably better log-loss and slightly better kappa. This indicates that, while both models correctly classify a similar fraction of cases, the random forest is more informative and distinguishes the two classes more effectively.
 
 ```{r}
 # Compare models}
@@ -372,8 +390,10 @@ print(rf_log_loss)
 rf_final_metrics <- rf_final_fit |>
   collect_metrics()
 
-rf_final_metrics
+print(rf_final_metrics)
 ```
+
+Across all cross validation folds and tuning combinations, the best random forest models cluster around a mean log loss of about 0.345 with very small standard errors. This consistency suggests the random forest’s performance is stable and not heavily dependent on a single random split.
 
 Collect and view matrics
 
@@ -390,12 +410,11 @@ print(rf_metrics)
 
 ```{r}
 # Combine Metrics into a DataFrame for Comparison
-# Combine Metrics into a DataFrame for Comparison
 model_comparison <- tibble(
   Model = c("Decision Tree", "Random Forest"),
   Accuracy = c(
     tree_final_metrics |> filter(.metric == "accuracy") |> pull(.estimate),
-    rf_metrics         |> filter(.metric == "accuracy")         |> pull(.estimate)
+    rf_metrics         |> filter(.metric == "accuracy") |> pull(.estimate)
   ),
   Log_Loss = c(
     tree_log_loss,
@@ -417,6 +436,8 @@ print(winner)
 
 ```
 
+Both models have similar test accuracy (\~0.86), but the random forest has far better log-loss than the decision tree. If we care about good probability estimates (for example, risk scores), the random forest is clearly the better choice, so it becomes our preferred model.
+
 ```{r}
 # Declare winner based on log-loss
 model_comparison <- tibble(
@@ -441,23 +462,27 @@ print(winner)
 
 ```
 
+Based on log loss performance, we select the random forest as the final model. It balances strong classification accuracy with much better calibrated probabilities compared to the single decision tree.
+
 Plot the variable importance
 
 ```{r}
 
-# 1. Extract the underlying ranger engine from your FULL model
-rf_engine <- extract_fit_engine(final_rf_full)  # or whatever your full RF workflow is
+# Extract the underlying ranger engine from FULL model
+rf_engine <- extract_fit_engine(final_rf_full)  
 
-# 2. Get importance as a named numeric vector
+# Get importance as a named numeric vector
 vi <- rf_engine$variable.importance
 vi 
-# 3. Turn it into a tibble with *term* and *value* columns
+
 vi_df <- tibble(
   term  = names(vi),
   value = as.numeric(vi)
 )
 
 ```
+
+The variable importance scores show that high blood pressure and BMI are the most influential predictors for the random forest. History of heart disease or heart attack and physical activity also contribute meaningfully, while smoking and sex have smaller, but still non-zero, importance.
 
 ```{r}
 colnames(vi_df)
@@ -479,6 +504,8 @@ vi_df |>
 
 ```
 
+The bar plot makes it clear that `HighBP`, `BMI`, and `HeartDiseaseorAttack` stand out as the top predictors in the model. This is consistent with medical knowledge that higher blood pressure, higher body weight, and prior heart conditions are closely linked to diabetes risk.
+
 ### Save the file for api
 
 ```{r}
@@ -492,6 +519,12 @@ vi_df |>
  saveRDS(model_comparison, file = "data/model_comparison.rds")
 ```
 
+The final training data, the tuned random forest model, and the summary of model performance are saved to disk. These saved files will be used later when we build the API, so we can load the model and make predictions without having to retrain it.
+
 ```{r}
 
 ```
+
+Link to Index Page
+
+[Click here for the Index Page](index.html)

@@ -22,7 +22,7 @@ library(tidymodels)
 
 ```
 
-You can add options to executable code like this
+Load the data
 
 ```{r}
 health_data <- read_csv("data/diabetes_binary_health_indicators_BRFSS2015.csv")
@@ -33,19 +33,27 @@ head(health_data)
 
 ```
 
+The dataset has 253,680 adults and 22 variables. Most predictors are coded as 0/1 and include things like blood pressure, cholesterol, BMI, smoking, and activity, along with demographics. The outcome `Diabetes_binary` tells us whether each person has diabetes or not.
+
 ```{r}
 health_data |>
   is.na() |>
   colSums()
 ```
 
+There are essentially no missing values in the dataset. This means we don’t need to do any imputation and can use the full data for our analysis and modeling.
+
 ```{r}
 attributes(health_data)$spec
 ```
 
+All variables are read in as numeric at first. The 0/1 variables represent yes/no answers and will later be turned into factors so the output is easier to read and interpret.
+
 ```{r}
 summary(health_data)
 ```
+
+About 14% of people in this sample have diabetes (mean of `Diabetes_binary` ≈ 0.139). BMI has a median around 27 and a mean around 28.4, which suggests that, on average, people in this dataset are in the overweight range. Many health behavior variables (like `PhysActivity`, `AnyHealthcare`) have medians at 1, meaning “Yes” is common.
 
 ```{r}
 health_data <- health_data |>
@@ -87,6 +95,8 @@ health_data <- health_data |>
 health_data
 ```
 
+All the key 0/1 variables have been relabeled with meaningful factor levels (for example, “NoDiabetes” / “Diabetes”, “No” / “Yes”, and age groups like “18–24”, “25–29”, etc.). This makes the plots and tables much easier to understand and is important for later modeling.
+
 Check factor levels:
 
 ```{r}
@@ -98,6 +108,8 @@ factor_col <- health_data |>
 lapply(factor_col, levels)
 ```
 
+The factor levels look correct and are in a logical order. For example, general health goes from “Excellent” to “Poor”, and age moves from the youngest group (18–24) to the oldest (80+). This ordering will help when we interpret trends across categories.
+
 Frequency tables for factors:
 
 ```{r}
@@ -108,11 +120,15 @@ factor_cont_table <- lapply(factor_col, table)
 factor_cont_table
 ```
 
+Most people in the sample do **not** have diabetes (around 218k with no diabetes vs about 35k with diabetes). Many respondents have high blood pressure or high cholesterol, and most have had a cholesterol check. A majority report having health insurance (`AnyHealthcare = Yes`), and many rate their general health as “Good” or “Very Good.” There are also more females than males in the dataset.
+
 Unique outcome levels:
 
 ```{r}
 unique(health_data$Diabetes_binary)
 ```
+
+The outcome variable has two clean levels: “NoDiabetes” and “Diabetes.” This confirms we have a straightforward binary classification problem.
 
 Overall diabetes prevalence
 
@@ -126,6 +142,8 @@ ggplot(health_data, aes(x = Diabetes_binary)) +
   )
 
 ```
+
+The bar plot shows a strong class imbalance: most individuals do **not** have diabetes, and only a smaller portion do. This is important to remember because models might default to predicting the majority class if we’re not careful.
 
 ### Diabetes and sex
 
@@ -144,6 +162,8 @@ ggplot(health_data, aes(x = Sex, fill = Diabetes_binary)) +
 
 ```
 
+The proportion of people with diabetes is fairly similar for males and females. There is no dramatic difference in diabetes rates between the two sexes when we look at proportions rather than raw counts.
+
 Counts by sex:
 
 ```{r}
@@ -156,6 +176,8 @@ ggplot(health_data, aes(x = Sex, fill = Diabetes_binary)) +
     )
 
 ```
+
+There are more female than male respondents overall, which is why the count of women with diabetes is slightly higher than the count of men with diabetes. However, this difference in counts mostly reflects the different sample sizes rather than a huge difference in risk.
 
 Contingency table:
 
@@ -195,11 +217,15 @@ ggplot(health_data, aes(x = Diabetes_binary, fill = Sex)) +
 
 ```
 
+The plot confirms the overall numbers: roughly 218k people without diabetes and about 35k with diabetes. Both males and females contribute to the diabetes group, but non-diabetic cases heavily dominate the sample.
+
 BMI distribution
 
 ```{r}
 summary(health_data$BMI)
 ```
+
+BMI ranges from 12 to 98, with most people between 24 and 31. The median BMI of 27 suggests that a large share of the sample is overweight or obese, which is consistent with known risk factors for diabetes.
 
 ```{r}
 ggplot(health_data, aes(x = BMI)) +
@@ -212,6 +238,8 @@ ggplot(health_data, aes(x = BMI)) +
 
 ```
 
+The BMI distribution is right-skewed. Most participants cluster in the mid 20s to low 30s range, but there are a few very high BMI values, indicating some extreme obesity cases.
+
 ```{r}
 ggplot(health_data, aes(x = "", y = BMI)) +
   geom_boxplot(fill = "orange") +
@@ -223,6 +251,8 @@ ggplot(health_data, aes(x = "", y = BMI)) +
 
 
 ```
+
+The boxplot shows many BMI values above the upper whisker, confirming there are several high-BMI outliers. These individuals might have especially high risk for diabetes and related conditions.
 
 General health vs diabetes
 
@@ -241,6 +271,8 @@ ggplot(health_data, aes(x = GenHlth, fill = Diabetes_binary)) +
   theme_minimal()
 
 ```
+
+People who report worse general health (“Fair” or “Poor”) are more likely to have diabetes. In contrast, those who report “Excellent” or “Very Good” health are much more likely to be in the non-diabetes group. This matches our expectation that diabetes is linked with poorer overall health.
 
 Count of diabetes cases by sex
 
@@ -266,6 +298,8 @@ diab_count
 
 ```
 
+Among those with diabetes, the counts are 18,411 women and 16,935 men. The difference is not huge and mostly reflects that there are more women than men in the sample.
+
 ```{r}
 ggplot(diab_count, aes(x = Sex, y = count, fill = Sex)) +
   geom_bar(stat = "identity", position = "dodge") +
@@ -288,6 +322,8 @@ health_data |>
   round(3)
 
 ```
+
+BMI has only weak correlations with both mental health days and physical health days (correlations around 0.08–0.12). Mental and physical health days are more moderately correlated with each other (around 0.35). Overall, the numeric predictors we checked are not strongly correlated, which reduces concern about multi-collinearity for modeling.
 
 Link to Modeling Page
 
