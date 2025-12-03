@@ -6,11 +6,19 @@
 
 # Libraries
 library(plumber)
-library(tidymodels)
-library(tidyverse)
-library(ggplot2)
-library(yardstick)
-library(readr)
+
+# Cant use tidymodels, so 
+library(recipes)     # recipe(), step_normalize()
+library(parsnip)     # rand_forest(), set_engine(), set_mode()
+library(workflows)   # workflow(), add_recipe(), add_model(), fit()
+
+# other helpers
+library(dplyr)       
+library(tibble)      
+library(ggplot2)     
+library(yardstick)   
+library(readr)       
+
 
 # Load and prepare data
 

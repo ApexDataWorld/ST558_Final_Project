@@ -1,21 +1,30 @@
-# Use an image with R and plumber preinstalled
+# start from the rstudio/plumber image
 FROM rstudio/plumber:latest
 
-# install the linux libraries needed for plumber 
-RUN apt-get update -qq && apt-get install -y libssl-dev libcurl4-gnutls-dev libpng-dev pandoc
+# install the linux libraries needed for R packages
+RUN apt-get update -qq && apt-get install -y \
+    libssl-dev \
+    libcurl4-gnutls-dev \
+    libpng-dev \
+    pandoc \
+  && rm -rf /var/lib/apt/lists/*
 
-# Create working directory inside the container
+# install R packages required for your model/API
+RUN R -e "install.packages( \
+    c('recipes','parsnip','workflows','dplyr','tibble', \
+      'ggplot2','yardstick','readr','ranger'), \
+    repos = 'https://cloud.r-project.org' \
+  )"
+
+# set a working directory inside the container
 WORKDIR /app
 
-# Copy API file and data folder into the image
+# copy API file and data folder into the image
 COPY myAPI.R /app/myAPI.R
 COPY data /app/data
 
-# Install required R packages
-RUN R -e "install.packages(c('tidyverse','tidymodels','ggplot2','yardstick','readr','ranger'), repos='https://cloud.r-project.org')"
-
-# Expose the port that plumber will run on
+# open port to traffic
 EXPOSE 8000
 
-# Start the plumber API when the container runs
+# when the container starts, start the myAPI.R script
 ENTRYPOINT ["R", "-e", "pr <- plumber::plumb('myAPI.R'); pr$run(host='0.0.0.0', port=8000, swagger=TRUE)"]
